@@ -33,7 +33,8 @@
                       (= 'list (first type)))
                false true)]
     (cond->
-      {:db/id                 (d/tempid :db.part/db)
+      {
+       ;; :db/id                 #db/id [:db.part/db]
        :db/ident              ns-ident
        :db/valueType          (if-let [type (types type)]
                                 (keyword "db.type" type)
@@ -75,6 +76,16 @@
   (let [schema (-> read-path
                    (read-schema)
                    (lacinia->datomic options)
+                   (pprint)
+                   (with-out-str))]
+    (spit write-path schema)))
+
+(defn save-conformity
+  [read-path write-path options]
+  (let [schema (-> read-path
+                   (read-schema)
+                   (lacinia->datomic options))
+        schema (-> {:project/schema {:txes [schema]}}
                    (pprint)
                    (with-out-str))]
     (spit write-path schema)))
