@@ -1,0 +1,110 @@
+;; TODO:
+;; 1. timestamp type, Long
+;; :scalars {
+;; :Long {
+;;        :parse (schema/as-conformer #(Long/parseLong %))
+;;        :serialize (schema/as-conformer #(do %))
+;;        }
+;; }
+
+{:enums
+ {:gender {:values ["MALE" "FEMALE"]}
+  :needLevel {:values ["SLIGHT" "MODERATE" "SEVERE"]}
+  :seenBefore {:values ["NEVER" "ONCE" "OCCASIONALLY" "FREQUENTLY"]}
+  :age {:values ["LTTWENTY" "TWENTYTHIRTY" "THIRTYFORTY" "FORTYFIFTY" "FIFTYSIXTY" "SIXTYSEVENTY" "SEVENTYEIGHTY" "GTEIGHTY"]}
+  :role {:values ["PUBLIC" "ORGMEMBER" "ORGADMIN" "SUPERADMIN"]}}
+
+ :interfaces
+ {:timestamp {:fields {:createdAt {:type String}
+                       :updatedAt {:type String}}}}
+ :objects
+ {:user
+  {:implements [:timestamp]
+   :fields     {:id               {:type String}
+                :name             {:type String}
+                :email            {:type String}
+                :password         {:type String}
+                :phone            {:type String}
+                :role             {:type :role
+                                   :default-value "PUBLIC"}
+                :facebookUserId   {:type String}
+                :reports          {:type (list :report)}
+                :organisations    {:type (list :organisation)}
+
+                :createdAt {:type String}
+                :updatedAt {:type String}}}
+
+  :area
+  {:implements [:timestamp]
+   :fields {:id {:type String}
+            :name {:type (non-null String)}
+            :organisation {:type :organisation}
+            :reports          {:type (list :report)}
+
+            :createdAt {:type String}
+            :updatedAt {:type String}}}
+
+  :report
+  {:implements [:timestamp]
+   :fields     {:id          {:type String}
+                :time {:type String}
+                :coordinates {:type String}
+                :address {:type (non-null String)}
+                :needLevel {:type :needLevel}
+                :pets {:type Boolean}
+                :children {:type Boolean}
+                :trolley {:type Boolean}
+                :injuries {:type Boolean}
+                :disabilities {:type Boolean}
+                :gender {:type :gender}
+                :age {:type :age}
+                :name {:type :String}
+                :email {:type :String}
+                :phone {:type :String}
+                :notes {:type :String}
+                :seenBefore {:type :seenBefore}
+                :user {:type (non-null :user)}
+                :area {:type (non-null :area)}
+                :createdAt {:type String}
+                :updatedAt {:type String}}}
+
+  :organisation
+  {:implements [:timestamp]
+   :fields     {:id          {:type String}
+                :name        {:type (non-null String)}
+                :description {:type (non-null String)}
+                :phone {:type String}
+                :users {:type (list :user)}
+                :areas {:type (list :area)}
+                :createdAt {:type String}
+                :updatedAt {:type String}}}
+
+  :tokens {:fields {:accessToken {:type String}
+                    :refreshToken {:type String}}}}
+
+ :queries
+ {:currentUser
+  {:type    (non-null :user)
+   :resolve :current-user}
+
+  :user
+  {:type    (non-null :user)
+   :args {:id {:type String}}
+   :resolve :user}
+
+  :allReports
+  {:type    (list :report)
+   :resolve :all-reports}}
+
+ :mutations
+ {:EmailSignin {:type    :tokens
+                :args    {:email {:type (non-null String)}
+                          :password {:type (non-null String)}}
+                :resolve :email-signin-mutation}
+  :FacebookLogin {:type    :tokens
+                  :args    {:token {:type (non-null String)}}
+                  :resolve :facebook-signin-mutation}
+  ;; :AddReport
+  ;; :AddMember
+  }
+ }
