@@ -1,6 +1,5 @@
 (ns lacinia2datomic.core
   (:require [clojure.edn :as edn]
-            [datomic.api :as d :refer [tempid]]
             [clojure.pprint :refer [pprint]]))
 
 (defn read-schema
@@ -19,6 +18,24 @@
    'UUID        "uuid"
    'URI         "uri"})
 
+(defrecord DatomicId [])
+(defn read-id
+  [args]
+  (->DatomicId))
+
+(defmethod print-method DatomicId [x ^java.io.Writer writer]
+  (print-method "#db/id [:db.part/db]" writer))
+
+(defmethod print-dup DatomicId [x ^java.io.Writer writer]
+  (print-dup "#db/id [:db.part/db]" writer))
+
+(defn pprint-datomic-id
+  [datomic-id]
+  (clojure.pprint/with-pprint-dispatch print  ;;Make the dispatch to your print function
+    (clojure.pprint/pprint datomic-id)))
+
+(. clojure.pprint/simple-dispatch addMethod DatomicId pprint-datomic-id)
+
 (defn build-schema
   [e a {:keys [type unique index doc fulltext isComponent noHistory]
         :or   {index false
@@ -33,8 +50,7 @@
                       (= 'list (first type)))
                false true)]
     (cond->
-      {
-       ;; :db/id                 #db/id [:db.part/db]
+      {:db/id                 #db/id [:db.part/db]
        :db/ident              ns-ident
        :db/valueType          (if-let [type (types type)]
                                 (keyword "db.type" type)
@@ -77,7 +93,8 @@
                    (read-schema)
                    (lacinia->datomic options)
                    (pprint)
-                   (with-out-str))]
+                   (with-out-str)
+                   )]
     (spit write-path schema)))
 
 (defn save-conformity
