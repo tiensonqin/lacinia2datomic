@@ -18,6 +18,17 @@
    'UUID        "uuid"
    'URI         "uri"})
 
+(defn ->datomic-type
+  [type]
+  (cond
+    (and (coll? type) (= 'non-null (first type)))
+    (->datomic-type (second type))
+
+    :else
+    (if-let [type (get types type)]
+      (keyword "db.type" type)
+      :db.type/ref)))
+
 (defrecord DatomicId [])
 (defn read-id
   [args]
@@ -52,9 +63,7 @@
     (cond->
       {:db/id                 #db/id [:db.part/db]
        :db/ident              ns-ident
-       :db/valueType          (if-let [type (types type)]
-                                (keyword "db.type" type)
-                                :db.type/ref)
+       :db/valueType          (->datomic-type type)
        :db/cardinality        (if one? :db.cardinality/one :db.cardinality/many)
        :db/doc                doc
        :db/noHistory          noHistory
